@@ -24,7 +24,8 @@ RUN pip install --no-cache-dir \
     kornia==0.6.7 \
     matplotlib \
     flask \
-    gunicorn
+    gunicorn \
+    google-cloud-storage
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
