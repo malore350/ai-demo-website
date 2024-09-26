@@ -1,12 +1,16 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask_cors import CORS
 from google.cloud import storage
-import io
 import base64
 import os
 import subprocess
 import tempfile
 
+import os
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'neon-trilogy-429805-g4-2b55a53841d2.json'
+
 app = Flask(__name__)
+CORS(app)
 
 # Initialize Google Cloud Storage client
 storage_client = storage.Client()
@@ -26,6 +30,14 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
     blob = bucket.blob(source_blob_name)
     blob.download_to_filename(destination_file_name)
 
+def delete_files_in_folder(bucket_name, folder_name):
+    """Deletes all blobs in a given folder."""
+    bucket = storage_client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=folder_name)
+    
+    for blob in blobs:
+        blob.delete()
+
 @app.route("/")
 def index():
     return redirect(url_for('home'))
@@ -36,6 +48,11 @@ def home():
 
 @app.route('/process-images', methods=['POST'])
 def process_images():
+    # Clean the 'src' and 'targ' folders before uploading new images
+    delete_files_in_folder(BUCKET_NAME, "DiffFace/data/src/")
+    delete_files_in_folder(BUCKET_NAME, "DiffFace/data/targ/")
+    delete_files_in_folder(BUCKET_NAME, "DiffFace/output/")
+    
     # Create temporary directories
     with tempfile.TemporaryDirectory() as tmpdir:
         src_path = os.path.join(tmpdir, 'data/src')
